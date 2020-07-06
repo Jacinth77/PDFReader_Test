@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.novayre.jidoka.robot.test</groupId>
+	<artifactId>FalconTest</artifactId>
+	<packaging>jar</packaging>
+	<version>0.0.1</version>
+
+	<name>robot-falcon-template</name>
+
+	<parent>
+		<groupId>com.novayre.jidoka.robot</groupId>
+		<artifactId>jidoka-robot-parent</artifactId>
+		<version>7.0.0</version> <!-- VC -->
+	</parent>
+
+	<properties>
+		<jidoka.createImageSupportClass>false</jidoka.createImageSupportClass>
+		<jidoka.serverId>jidoka-console</jidoka.serverId>
+		<jidoka.consoleURL>http://lab.jidoka.io/</jidoka.consoleURL>
+		<jidoka.robotName>robot-falcon-template</jidoka.robotName>
+		<jidoka.imageSupportClassFullName>com.novayre.jidoka.falcon.robot.JidokaImageSupport</jidoka.imageSupportClassFullName>
+
+	</properties>
+
+	<profiles>
+		<profile>
+			<id>trial</id>
+
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+
+			<repositories>
+				<repository>
+					<id>jidoka</id>
+					<url>https://infosysdev.appiancloud.com/rpa-repo/repository/jidoka/</url>
+					<releases>
+					</releases>
+					<snapshots>
+					</snapshots>
+				</repository>
+			</repositories>
+
+			<pluginRepositories>
+				<pluginRepository>
+					<id>jidoka</id>
+					<url>https://infosysdev.appiancloud.com/rpa-repo/repository/jidoka/</url>
+					<releases>
+					</releases>
+					<snapshots>
+					</snapshots>
+				</pluginRepository>
+			</pluginRepositories>
+			<distributionManagement>
+				<repository>
+					<id>jidoka</id>
+					<url>https://infosysdev.appiancloud.com/rpa-repo/repository/jidoka/</url>
+					<layout>default</layout>
+				</repository>
+			</distributionManagement>
+		</profile>
+
+	</profiles>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.novayre.jidoka.module</groupId>
+			<artifactId>jidoka-falcon-api</artifactId>
+			<version>${jidoka.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+	</dependencies>
+</project>
