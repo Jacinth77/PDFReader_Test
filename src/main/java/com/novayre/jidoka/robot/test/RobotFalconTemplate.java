@@ -10,13 +10,12 @@ import com.novayre.jidoka.client.api.JidokaFactory;
 import com.novayre.jidoka.client.api.annotations.Robot;
 import com.novayre.jidoka.client.api.multios.IClient;
 import com.novayre.jidoka.falcon.api.*;
-import com.novayre.jidoka.falcon.ocr.api.OCROptions;
-import com.novayre.jidoka.falcon.ocr.api.StartParameters;
-import com.novayre.jidoka.falcon.ocr.api.ThresholdParameters;
+import com.novayre.jidoka.falcon.ocr.api.*;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -181,7 +180,7 @@ public class RobotFalconTemplate implements IRobot {
 
 	public void recognize() throws Exception {
 		Path screenshot = Paths.get(server.getCurrentDir(), "screenshot_mod.png");
-		final BufferedImage defaultImage =
+		BufferedImage defaultImage =
 				ImageIO.read(Paths.get(server.getCurrentDir(),  "screenshot_mod.png").toFile());
 
 		if (defaultImage != null){
@@ -196,11 +195,12 @@ public class RobotFalconTemplate implements IRobot {
 			s.setImageDescription("Original");
 
 			falconProcess.start(defaultImage,s);
-			falconProcess.threshold(new ThresholdParameters()
-					.thresh(100)
-					.maxVal(255)
-					.otsu(false)
-					.type(ThresholdParameters.EType.BINARY));
+
+			falconProcess.ocr(new OCRParameters()
+							.languageInImage("eng")
+							.configuration(null)
+							.textFormInImage(1));
+
 			String output = addSuffix(screenshot.toFile().getAbsolutePath(), "_modnew");
 			File f = new File(output);
 			ImageIO.write(defaultImage, "png", f);
@@ -208,12 +208,14 @@ public class RobotFalconTemplate implements IRobot {
 			falcon.sendImage(ImageIO.read(new File(output)), output);
 
 
+
+
 			//falconProcess.(new ThresholdParameters().thresh(100).maxVal(255).otsu(false).type(ThresholdParameters.EType.BINARY));
-			String text = falcon.extractText(defaultImage, rectanguloCif, ETextFormInImage.FULLY_AUTOMATIC_PAGE_SEGMENTATION_WITHOUT_OSD,
-					ELanguageInImage.ENGLISH, null, 1.9f, 0f);
+			//String text = falcon.extractText(defaultImage, rectanguloCif, ETextFormInImage.FULLY_AUTOMATIC_PAGE_SEGMENTATION_WITHOUT_OSD,
+			//		ELanguageInImage.ENGLISH, null, 1.9f, 0f);
 
 
-			server.info("Resutl:" + text);
+			//server.info("Resutl:" + text);
 
 		}else{
 			server.info("Null Image");
