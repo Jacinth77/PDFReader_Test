@@ -195,6 +195,14 @@ public class RobotFalconTemplate implements IRobot {
 			s.setImageDescription("Original");
 
 			falconProcess.start(defaultImage,s);
+			falconProcess.gray(new GrayParameters());
+			falconProcess.morphTool(new MorphToolParameters()
+					.width(50)
+					.height(50)
+					.shape(MorphToolParameters.EShape.RECT));
+			//falconProcess.erode(new ErodeParameters().repetitions(60));
+			falconProcess.dilate(new DilateParameters().repetitions(1));
+			falconProcess.saveContext(new SaveContextParameters().id("jacie"));
 
 			falconProcess.ocr(new OCRParameters()
 							.languageInImage("eng")
