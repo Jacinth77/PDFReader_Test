@@ -195,14 +195,32 @@ public class RobotFalconTemplate implements IRobot {
 			s.setImageDescription("Original");
 
 			falconProcess.start(defaultImage,s);
-			falconProcess.gray(new GrayParameters());
 			falconProcess.morphTool(new MorphToolParameters()
-					.width(50)
-					.height(50)
+					.width(defaultImage.getWidth())
+					.height(defaultImage.getHeight())
 					.shape(MorphToolParameters.EShape.RECT));
-			//falconProcess.erode(new ErodeParameters().repetitions(60));
-			falconProcess.dilate(new DilateParameters().repetitions(1));
 			falconProcess.saveContext(new SaveContextParameters().id("jacie"));
+			falconProcess.threshold(new ThresholdParameters().type(ThresholdParameters.EType.TOZERO));
+			//falconProcess.erode(new ErodeParameters().repetitions(100));
+			//falconProcess.restoreMatrix(new RestoreMatrixParameters().id("jacie"));
+			falconProcess.morphology(new MorphologyParameters().operation(MorphologyParameters.EOperation.BLACK_HAT));
+			falconProcess.gray(new GrayParameters());
+			//falconProcess.adaptiveThreshold(new AdaptiveThresholdParameters().type(AdaptiveThresholdParameters.EType.BINARY));
+			falconProcess.edge(new EdgeParameters()
+					.action(EdgeParameters.EEdge.EDGE_ZERO_FILL)
+					.width(3)
+					.height(3)
+					.data(new float[]{0,.2f,0,.2f,.1f,.5f,0,.5f,0}));
+			falconProcess.restoreMatrix(new RestoreMatrixParameters().id("jacie"));
+			falconProcess.edge(new EdgeParameters()
+					.action(EdgeParameters.EEdge.EDGE_NO_OP)
+					.width(3)
+					.height(3)
+					.data(new float[]{0,.2f,0,.2f,.1f,.5f,0,.5f,0}));
+
+
+
+
 
 			falconProcess.ocr(new OCRParameters()
 							.languageInImage("eng")
