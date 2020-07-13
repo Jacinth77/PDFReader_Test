@@ -11,7 +11,11 @@ import com.novayre.jidoka.client.api.annotations.Robot;
 import com.novayre.jidoka.client.api.multios.IClient;
 import com.novayre.jidoka.falcon.api.*;
 import com.novayre.jidoka.falcon.ocr.api.*;
+import net.sourceforge.tess4j.Tesseract;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -21,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+
 
 /**
  * The Class RobotFalconTemplate.
@@ -39,6 +45,7 @@ public class RobotFalconTemplate implements IRobot {
 	
 	private JidokaImageSupport images;
 	private RobotFalconTemplate MyRobot;
+
 
 
 	/**
@@ -63,244 +70,63 @@ public class RobotFalconTemplate implements IRobot {
 	 * @throws IOException 
 	 * @throws AWTException 
 	 */
-	public void searchImage() throws Exception {
-		
-		IFalconImage testImage = images.getTestPng().search();
-		
-		// Uncomment to apply 25% noise and color tolerance 
-//		testImage.setTolerance(.25f);
-//		testImage.getOptions().colorTolerance(.25f);
-		
-		server.info("Searching the image: " + testImage.getDescription());
-		
-		// Sends the image to the trace
-		falcon.sendImage(testImage.getImage(), "Test image");
+		public void convertPdfToImage() throws  Exception{
 
-		
-		server.info("Desktop capture");
-		server.sendScreen("Current desktop");
-		
-		// Image search on the desktop
-		if (testImage.search().found()) {
+			Path screenshot	 = Paths.get(server.getCurrentDir(), "screenshot.pdf");
+			server.info("Path"+  screenshot);
+			//String sourceDir ="C:\\Users\\prasanthraja.c\\Downloads\\screenshot.pdf";
+		String sourceDir =screenshot.toString();
+			String destinationDir = "C:\\Users\\prasanthraja.c\\Downloads\\Converted_PdfFiles_to_Image/"; // converted images from pdf document are saved here
 
-			
-			server.info("Image found at: " + testImage.getPointsWhereFound().get(0));
+			File sourceFile = new File(sourceDir);
 
-			// Draw a rectangle where the image was found
-			drawRectangle(testImage);
-			
-			// Single left click over the image
-			testImage.clickOnCenter();
-			
-			server.setCurrentItemResultToOK();
-			ReadOCR();
-			
-		} else {
-			
-			server.warn("Image not found");
-			server.setCurrentItemResultToWarn();
-		}
-	}
-	/*
-	method for OCR
-	 */
+			server.info("Passed sourceDir");
+			File destinationFile = new File(destinationDir);
+			if (!destinationFile.exists()) {
+				destinationFile.mkdir();
+				server.info("Folder Created -> "+ destinationFile.getAbsolutePath());
+			}
+			if (sourceFile.exists()) {
+				server.info("Images copied to Folder Location: "+ destinationFile.getAbsolutePath());
+				PDDocument document = PDDocument.load(sourceFile);
+				PDFRenderer pdfRenderer = new PDFRenderer(document);
 
-	public void ReadOCR() throws Exception{
-		IFalconProcess falconProcess = falcon.getFalconProcess();
-		Rectangle r = new Rectangle(0,3,276,51);
-		OCROptions o = new OCROptions();
-		o.setConfiguration(null);
-		o.setLanguageInImage("eng");
-		o.setTextFormInImage(1);
+				int numberOfPages = document.getNumberOfPages();
+				server.info("Total files to be converting -> "+ numberOfPages);
 
-		Path screenshot = Paths.get(server.getCurrentDir(), "screenshot.png");
-		BufferedImage img = ImageIO.read(new File(String.valueOf(screenshot)));
-		server.info("Data  "+img.getData());
-		server.info("Answer    "+falcon.extractText(img,r, ETextFormInImage.AUTOMATIC_PAGE_SEGMENTATION_WITH_OSD, ELanguageInImage.ENGLISH,null
-				,1,1));
+				String fileName = sourceFile.getName().replace(".pdf", "");
+				String fileExtension= "png";
 
-	}
-	
-	/**
-	 * Draw rectangle over screenshot capture to show where the image was found
-	 *
-	 * @param imageFound the image found
-	 * @return the string
-	 * @throws AWTException 
-	 */
-	private String drawRectangle(IFalconImage imageFound) throws AWTException {
+				int dpi = 300;// use less dpi for to save more space in harddisk. For professional usage you can use more than 300dpi
 
-		try {
-			
-			Path screenshot = Paths.get(server.getCurrentDir(), "screenshot.png");
-			ImageIO.write(server.getScreen(), "png", screenshot.toFile());
-			
-			BufferedImage img = ImageIO.read(screenshot.toFile());
-			Graphics2D g2d = img.createGraphics();
+				for (int i = 0; i < numberOfPages; ++i) {
+					File outPutFile = new File(destinationDir + fileName +"_"+ (i+1) +"."+ fileExtension);
+					BufferedImage bImage = pdfRenderer.renderImageWithDPI(i, dpi, ImageType.RGB);
+					ImageIO.write(bImage, fileExtension, outPutFile);
 
-			Point p = imageFound.getPointsWhereFound().get(0);
-			server.info("Point  +"+imageFound.getPointsWhereFound().get(0));
+				}
 
-			Rectangle r = new Rectangle(529,239,1366,768);
-			OCROptions o = new OCROptions();
-			o.setConfiguration(null);
-			o.setLanguageInImage("eng");
-			o.setTextFormInImage(8);
-
-			Path screenshot1 = Paths.get(server.getCurrentDir(), "screenshot.png");
-			BufferedImage img1 = ImageIO.read(new File(String.valueOf(screenshot1)));
-			server.info("Data  "+img.getData());
-			server.info("Answer    "+falcon.extractText(img1,r, ETextFormInImage.AUTOMATIC_PAGE_SEGMENTATION_WITH_OSD, ELanguageInImage.ENGLISH,null
-					,1,1));
-			server.info("Answer2  "+falcon.extractTextImageProcessing(img1,r,o));
+				document.close();
+				server.info("Converted Images are saved at -> "+ destinationFile.getAbsolutePath());
+			} else {
+				server.info(sourceFile.getName() +" File not exists");
+			}
 
 
-
-
-			g2d.setStroke(new BasicStroke(3));
-			g2d.setColor(Color.RED);
-			g2d.drawRect(p.x, p.y, imageFound.getRectangle().width, imageFound.getRectangle().height);
-			g2d.dispose();
-
-			String output = addSuffix(screenshot.toFile().getAbsolutePath(), "_mod");
-
-			File f = new File(output);
-
-			ImageIO.write(img, "png", f);
-			server.info("Save image modified: " + output);
-			
-			falcon.sendImage(ImageIO.read(new File(output)), output);
-
-			return output;
-		} catch (IOException | InterruptedException e) {
-			return null;
-		}
 
 	}
 
-	public void recognize() throws Exception {
-		Path screenshot = Paths.get(server.getCurrentDir(), "screenshot_mod.png");
-		BufferedImage defaultImage =
-				ImageIO.read(Paths.get(server.getCurrentDir(),  "screenshot_mod.png").toFile());
 
-		if (defaultImage != null){
-			Rectangle rectanguloCif = new Rectangle(defaultImage.getWidth(), defaultImage.getHeight());
-
-
-			Graphics2D g2d = defaultImage.createGraphics();
-			IFalconProcess falconProcess = falcon.getFalconProcess();
-			StartParameters s = new StartParameters();
-			s.setLogImages(true);
-			s.setLogIntermediateMessages(true);
-			s.setImageDescription("Original");
-
-			falconProcess.start(defaultImage,s);
-			falconProcess.morphTool(new MorphToolParameters()
-					.width(defaultImage.getWidth())
-					.height(defaultImage.getHeight())
-					.shape(MorphToolParameters.EShape.RECT));
-			falconProcess.saveContext(new SaveContextParameters().id("jacie"));
-			falconProcess.threshold(new ThresholdParameters().type(ThresholdParameters.EType.TOZERO));
-			//falconProcess.erode(new ErodeParameters().repetitions(100));
-			//falconProcess.restoreMatrix(new RestoreMatrixParameters().id("jacie"));
-			falconProcess.morphology(new MorphologyParameters().operation(MorphologyParameters.EOperation.BLACK_HAT));
-			falconProcess.gray(new GrayParameters());
-			//falconProcess.adaptiveThreshold(new AdaptiveThresholdParameters().type(AdaptiveThresholdParameters.EType.BINARY));
-			falconProcess.edge(new EdgeParameters()
-					.action(EdgeParameters.EEdge.EDGE_ZERO_FILL)
-					.width(3)
-					.height(3)
-					.data(new float[]{0,.2f,0,.2f,.1f,.5f,0,.5f,0}));
-			falconProcess.restoreMatrix(new RestoreMatrixParameters().id("jacie"));
-			falconProcess.edge(new EdgeParameters()
-					.action(EdgeParameters.EEdge.EDGE_NO_OP)
-					.width(3)
-					.height(3)
-					.data(new float[]{0,.2f,0,.2f,.1f,.5f,0,.5f,0}));
+public void extractTextFromOCR () throws Exception{
+		String inputFile ="C:\\Users\\prasanthraja.c\\Downloads\\figure-651.png";
+		Tesseract tesseract = new Tesseract();
+		tesseract.setDatapath("D:\\IntelJWorkspace\\RPA Projects\\tessdata");
+		tesseract.setLanguage("deu");
+		String ExtractedText = tesseract.doOCR(new File(inputFile));
+		server.info("Text :" + ExtractedText);
+}
 
 
-
-
-
-			falconProcess.ocr(new OCRParameters()
-							.languageInImage("eng")
-							.configuration(null)
-							.textFormInImage(1));
-
-			String output = addSuffix(screenshot.toFile().getAbsolutePath(), "_modnew");
-			File f = new File(output);
-			ImageIO.write(defaultImage, "png", f);
-			server.info("Save image modified: " + output);
-			falcon.sendImage(ImageIO.read(new File(output)), output);
-
-
-
-
-			//falconProcess.(new ThresholdParameters().thresh(100).maxVal(255).otsu(false).type(ThresholdParameters.EType.BINARY));
-			//String text = falcon.extractText(defaultImage, rectanguloCif, ETextFormInImage.FULLY_AUTOMATIC_PAGE_SEGMENTATION_WITHOUT_OSD,
-			//		ELanguageInImage.ENGLISH, null, 1.9f, 0f);
-
-
-			//server.info("Resutl:" + text);
-
-		}else{
-			server.info("Null Image");
-		}
-	}
-
-	/*public static BufferedImage convertToARGB(BufferedImage image)
-	{
-
-		BufferedImage img = image.getSubimage(0, 0, 58, 15);
-		BufferedImage copyOfImage = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = copyOfImage.createGraphics();
-		RenderingHints rh = new RenderingHints(
-				RenderingHints.KEY_TEXT_ANTIALIASING,
-				RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-		g.setRenderingHints(rh);
-		g.drawImage(img, 0, 0, null);
-		return copyOfImage;
-
-	}
-	*/
-	public static BufferedImage convertToARGB(BufferedImage image)
-	{
-		BufferedImage newImage = new BufferedImage(
-				image.getWidth(), image.getHeight(),
-				BufferedImage.TYPE_INT_ARGB);
-
-
-		Graphics2D g = newImage.createGraphics();
-		RenderingHints rh = new RenderingHints(
-				RenderingHints.KEY_TEXT_ANTIALIASING,
-				RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-		g.setRenderingHints(rh);
-
-		g.drawImage(image, 0, 1, null);
-		g.dispose();
-
-		return newImage;
-
-	}
-	
-	/**
-	 * Adds the suffix to a filename
-	 *
-	 * @param filename the filename
-	 * @param suffix the suffix
-	 * @return the string
-	 */
-	private String addSuffix(String filename, String suffix) {
-
-		String baseName = FilenameUtils.getBaseName(filename);
-		baseName += suffix;
-
-		String output = FilenameUtils.getFullPath(filename) + File.separator + baseName + "."
-				+ FilenameUtils.getExtension(filename);
-
-		return output;
-	}
-	
 	/**
 	 * End.
 	 */
