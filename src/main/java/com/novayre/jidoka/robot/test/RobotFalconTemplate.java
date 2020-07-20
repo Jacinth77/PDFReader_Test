@@ -72,7 +72,7 @@ public class RobotFalconTemplate implements IRobot {
 	 */
 		public void convertPdfToImage() throws  Exception{
 
-			Path screenshot	 = Paths.get(server.getCurrentDir(), "screenshot.pdf");
+			Path screenshot	 = Paths.get(server.getCurrentDir(), "Dutch.pdf");
 			server.info("Path"+  screenshot);
 			//String sourceDir ="C:\\Users\\prasanthraja.c\\Downloads\\screenshot.pdf";
 		String sourceDir =screenshot.toString();
@@ -118,10 +118,11 @@ public class RobotFalconTemplate implements IRobot {
 
 
 public void extractTextFromOCR () throws Exception{
-		String inputFile ="C:\\Users\\prasanthraja.c\\Downloads\\figure-651.png";
+
+		String inputFile ="C:\\Users\\prasanthraja.c\\Downloads\\Converted_PdfFiles_to_Image\\Dutch_1.png";
 		Tesseract tesseract = new Tesseract();
 		tesseract.setDatapath("D:\\IntelJWorkspace\\RPA Projects\\tessdata");
-		tesseract.setLanguage("deu");
+		//tesseract.setLanguage("nld");
 		String ExtractedText = tesseract.doOCR(new File(inputFile));
 		server.info("Text :" + ExtractedText);
 }
