@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/FalconTest.iml" filepath="$PROJECT_DIR$/FalconTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/IPB_ImageProcessingBot/IPB_ImageProcessingBot.iml" filepath="$PROJECT_DIR$/IPB_ImageProcessingBot/IPB_ImageProcessingBot.iml" />
     </modules>
   </component>
 </project>

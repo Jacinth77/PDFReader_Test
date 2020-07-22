@@ -7,10 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="FalconTest" />
+        <module name="IPB_ImageProcessingBot" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="FalconTest" target="1.8" />
+      <module name="IPB_ImageProcessingBot" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
