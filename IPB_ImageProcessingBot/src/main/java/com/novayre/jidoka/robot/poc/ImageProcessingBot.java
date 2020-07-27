@@ -1,15 +1,19 @@
 package com.novayre.jidoka.robot.poc;
 
-import java.awt.AWTException;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Objects;
-import javax.imageio.ImageIO;
+//import java.util.ArrayList;
+//import java.util.Date;
+//import java.util.HashMap;
+import java.util.*;
+import javax.imageio.*;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.FileImageOutputStream;
+
 import com.google.gson.Gson;
 import com.novayre.jidoka.client.api.appian.IAppian;
 import com.novayre.jidoka.client.api.appian.webapi.IWebApiRequest;
@@ -17,6 +21,7 @@ import com.novayre.jidoka.client.api.appian.webapi.IWebApiRequestBuilderFactory;
 import com.novayre.jidoka.client.api.appian.webapi.IWebApiResponse;
 import com.novayre.jidoka.data.provider.api.EExcelType;
 import com.novayre.jidoka.data.provider.api.IExcel;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import com.novayre.jidoka.client.api.IJidokaServer;
 import com.novayre.jidoka.client.api.IRobot;
@@ -31,6 +36,9 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.w3c.dom.Element;
+import net.sourceforge.tess4j.Tesseract;
+import java.util.List;
 
 /**
  * The Class ImageProcessingBot.
@@ -40,6 +48,7 @@ public class ImageProcessingBot implements IRobot {
 
 	/** The server. */
 	private IJidokaServer< ? > server;
+	public String fileNameinput;
 	/** The falcon. */
 	private IFalcon falcon;
 	/** The client. */
@@ -48,16 +57,18 @@ public class ImageProcessingBot implements IRobot {
     private IExcel excel;
     private String robotDir;
     private String excelName;
-    private String docType ="PASSPORT";
+    private String docType ="";
 	private HashMap<String, String> results = new HashMap<>();
-	private String[] ocrValues = new String[]{
+	/*private String[] ocrValues = new String[]{
 			"123456",
 			docType,
 			"John",
 			"Smith",
 			"22/04/1985",
 			"Europe"
-	};
+	};*/
+
+	private  List<String> ocrValues = new ArrayList<String>();
 
 
 
@@ -82,7 +93,9 @@ public class ImageProcessingBot implements IRobot {
 	 * @throws AWTException
 	 */
 	public String isPDF() throws Exception {
-		Path inputFile = Paths.get(server.getCurrentDir(), "Dutch.pdf");
+
+		fileNameinput = server.getParameters().get("docFile");
+		Path inputFile = Paths.get(server.getCurrentDir(), fileNameinput);
 		String fileType = FilenameUtils.getExtension(inputFile.toString());
 		server.info("fileType " + fileType);
 		String expMsg = "File Error";
@@ -92,6 +105,9 @@ public class ImageProcessingBot implements IRobot {
 
 			}
 			else {
+				BufferedImage defaultImage =
+						ImageIO.read(Paths.get(inputFile.toString()).toFile());
+				ImageIO.write(defaultImage, "jpg", new File("D:\\Output file\\"+fileNameinput+ ".jpg"));
 				return "No";
 			}
 		}
@@ -99,12 +115,14 @@ public class ImageProcessingBot implements IRobot {
 	}
 	public void convertPdfToImage() throws  Exception{
 
-		Path screenshot	 = Paths.get(server.getCurrentDir(), "Dutch.pdf");
+		Path screenshot	 = Paths.get(server.getCurrentDir(), fileNameinput);
+
+		//Path screenshot	 = Paths.get(server.getCurrentDir(), "Dutch.pdf");
 		server.info("Path"+  screenshot);
 		//String sourceDir ="C:\\Users\\prasanthraja.c\\Downloads\\screenshot.pdf";
 		String sourceDir =screenshot.toString();
-		String destinationDir = "C:\\Users\\prasanthraja.c\\Downloads\\Converted_PdfFiles_to_Image/"; // converted images from pdf document are saved here
-
+		//String destinationDir = "C:\\Users\\prasanthraja.c\\Downloads\\Converted_PdfFiles_to_Image/"; // converted images from pdf document are saved here
+		String destinationDir = "D:\\Output file"; // converted images from pdf document are saved here
 		File sourceFile = new File(sourceDir);
 
 		server.info("Passed sourceDir");
@@ -122,7 +140,7 @@ public class ImageProcessingBot implements IRobot {
 			server.info("Total files to be converting -> "+ numberOfPages);
 
 			String fileName = sourceFile.getName().replace(".pdf", "");
-			String fileExtension= "png";
+			String fileExtension= "jpg";
 
 			int dpi = 300;
 
@@ -162,6 +180,8 @@ public class ImageProcessingBot implements IRobot {
 				row.createCell(0, CellType.STRING).setCellValue("First Name");
 				row.createCell(1, CellType.STRING).setCellValue("Last Name");
 				row.createCell(2, CellType.STRING).setCellValue("Passport No");
+				row.createCell(3, CellType.STRING).setCellValue("Date of Birth");
+				row.createCell(4, CellType.STRING).setCellValue("Place");
 				//row.createCell(3, CellType.STRING).setCellValue("Stock");
 				// Create header row style
 				XSSFCellStyle style = (XSSFCellStyle)
@@ -184,9 +204,11 @@ public class ImageProcessingBot implements IRobot {
 				//row.getCell(3).setCellStyle(style);
 				// Row content
 				Row row1 = excel.getWorkbook().getSheet("Passport").createRow(1);
-				row1.createCell(0, CellType.STRING).setCellValue(ocrValues[0]);
-				row1.createCell(1, CellType.STRING).setCellValue(ocrValues[1]);
-				row1.createCell(2, CellType.STRING).setCellValue(ocrValues[2]);
+				row1.createCell(0, CellType.STRING).setCellValue(ocrValues.get(2));
+				row1.createCell(1, CellType.STRING).setCellValue(ocrValues.get(3));
+				row1.createCell(2, CellType.STRING).setCellValue(ocrValues.get(0));
+				row1.createCell(3, CellType.STRING).setCellValue(ocrValues.get(4));
+				row1.createCell(4, CellType.STRING).setCellValue(ocrValues.get(5));
 
 // Define the column width
 
@@ -199,6 +221,8 @@ public class ImageProcessingBot implements IRobot {
 				row.createCell(0, CellType.STRING).setCellValue("First Name");
 				row.createCell(1, CellType.STRING).setCellValue("Last Name");
 				row.createCell(2, CellType.STRING).setCellValue("DL No");
+				row.createCell(3, CellType.STRING).setCellValue("Date of Birth");
+				row.createCell(4, CellType.STRING).setCellValue("Place");
 				//row.createCell(3, CellType.STRING).setCellValue("Stock");
 				// Create header row style
 				XSSFCellStyle style = (XSSFCellStyle)
@@ -221,9 +245,11 @@ public class ImageProcessingBot implements IRobot {
 				//row.getCell(3).setCellStyle(style);
 				// Row content
 				Row row1 = excel.getWorkbook().getSheet("DL").createRow(1);
-				row1.createCell(0, CellType.STRING).setCellValue(ocrValues[0]);
-				row1.createCell(1, CellType.STRING).setCellValue(ocrValues[1]);
-				row1.createCell(2, CellType.STRING).setCellValue(ocrValues[2]);
+				row1.createCell(0, CellType.STRING).setCellValue(ocrValues.get(2));
+				row1.createCell(1, CellType.STRING).setCellValue(ocrValues.get(3));
+				row1.createCell(2, CellType.STRING).setCellValue(ocrValues.get(0));
+				row1.createCell(3, CellType.STRING).setCellValue(ocrValues.get(4));
+				row1.createCell(4, CellType.STRING).setCellValue(ocrValues.get(5));
 
 // Define the column width
 
@@ -237,6 +263,8 @@ public class ImageProcessingBot implements IRobot {
 				row.createCell(0, CellType.STRING).setCellValue("First Name");
 				row.createCell(1, CellType.STRING).setCellValue("Last Name");
 				row.createCell(2, CellType.STRING).setCellValue("Id No");
+				row.createCell(3, CellType.STRING).setCellValue("Date of Birth");
+				row.createCell(4, CellType.STRING).setCellValue("Place");
 				//row.createCell(3, CellType.STRING).setCellValue("Stock");
 				// Create header row style
 				XSSFCellStyle style = (XSSFCellStyle)
@@ -259,9 +287,11 @@ public class ImageProcessingBot implements IRobot {
 				//row.getCell(3).setCellStyle(style);
 				// Row content
 				Row row1 = excel.getWorkbook().getSheet("Identity Card").createRow(1);
-				row1.createCell(0, CellType.STRING).setCellValue(ocrValues[0]);
-				row1.createCell(1, CellType.STRING).setCellValue(ocrValues[1]);
-				row1.createCell(2, CellType.STRING).setCellValue(ocrValues[2]);
+				row1.createCell(0, CellType.STRING).setCellValue(ocrValues.get(2));
+				row1.createCell(1, CellType.STRING).setCellValue(ocrValues.get(3));
+				row1.createCell(2, CellType.STRING).setCellValue(ocrValues.get(0));
+				row1.createCell(3, CellType.STRING).setCellValue(ocrValues.get(4));
+				row1.createCell(4, CellType.STRING).setCellValue(ocrValues.get(5));
 
 // Define the column width
 
@@ -274,7 +304,7 @@ public class ImageProcessingBot implements IRobot {
 			server.error(e);
 		}
 // Row content
-		server.info(ocrValues.length);
+		server.info(ocrValues.size());
 
 		}
 	public void uploadAttachmentsToAppian() throws Exception {
@@ -288,13 +318,13 @@ public class ImageProcessingBot implements IRobot {
 		String output = uploadExcel(fileUpload);
 		Gson gson =new Gson();
 		//results.put("DocID", gson.toJson(results));
-		results.put("ExcelDocID ",output);
-		results.put("IDNumber",ocrValues[0]);
-		results.put("DocType ",ocrValues[1]);
-		results.put("FirstName",ocrValues[2]);
-		results.put("LastName",ocrValues[3]);
-		results.put("DOB",ocrValues[4]);
-		results.put("Place",ocrValues[5]);
+		results.put("ExcelDocID",output);
+		results.put("IDNumber",ocrValues.get(0));
+		results.put("DocType",ocrValues.get(1));
+		results.put("FirstName",ocrValues.get(2));
+		results.put("LastName",ocrValues.get(3));
+		results.put("DOB",ocrValues.get(4));
+		results.put("Place",ocrValues.get(5));
 		server.info("Upload result " + results);
 	}
 	private String uploadExcel(File file) throws Exception{
@@ -309,11 +339,108 @@ public class ImageProcessingBot implements IRobot {
 		this.server.info("output:" + output);
 		return output;
 	}
-
+//PreProcessing
 		public void ImgPreprocessing() throws Exception{
+			SetDPI();
+			String DPI = "D:\\Output file\\DPI.jpg";
+			BufferedImage defaultImage1 =
+					ImageIO.read(Paths.get(DPI).toFile());
+
+			BufferedImage defaultImage = new BufferedImage(1550, 1024, defaultImage1.getType());
+			Graphics2D graphic = defaultImage.createGraphics();
+			graphic.drawImage(defaultImage1, 0, 0, 1550, 1024, null);
+			graphic.dispose();
+			//ImageIO.write(defaultImage, "jpg", new File("D:\\Output file\\contrast"  + ".jpg"));
+
+			Tesseract tesseract = new Tesseract();
+			tesseract.setDatapath("D:\\TessData");
+			tesseract.setLanguage("eng");
 
 
+			BufferedImage dest = defaultImage.getSubimage(590, 425,200, 30);
+			String Country = "D:\\Output file\\Country.jpg";
+			ImageIO.write(dest, "jpg", new File(Country));
+			String CountryName = tesseract.doOCR(new File(Country));
+			server.info("Country :" + CountryName);
+
+
+
+			BufferedImage first = defaultImage.getSubimage(570, 325,350, 35);
+			String firstname = "D:\\Output file\\first.jpg";
+			ImageIO.write(first, "jpg", new File(firstname));
+			String firstnamevalue = tesseract.doOCR(new File(firstname));
+			server.info("firstnamevalue :" + firstnamevalue);
+
+
+			BufferedImage Last = defaultImage.getSubimage(570, 250,300, 35);
+			String Lastname = "D:\\Output file\\Last.jpg";
+			ImageIO.write(Last, "jpg", new File(Lastname));
+			String Lastnamev = tesseract.doOCR(new File(Lastname));
+			server.info("Lastnamev :" + Lastnamev);
+
+			BufferedImage number = defaultImage.getSubimage(1120, 168,350, 65);
+			String number1 = "D:\\Output file\\num.jpg";
+			ImageIO.write(number, "jpg", new File(number1));
+			String ID = tesseract.doOCR(new File(number1));
+			server.info("ID :" + ID);
+			if (ID.length()<11) {
+				docType="PASSPORT";
+			}
+
+			BufferedImage DOB = defaultImage.getSubimage(1150, 393,350, 55);
+			String DOB1 = "D:\\Output file\\dob.jpg";
+			ImageIO.write(DOB, "jpg", new File(DOB1));
+			String DOB2 = tesseract.doOCR(new File(DOB1));
+			server.info("DOB :" + DOB2);
+
+			BufferedImage place = defaultImage.getSubimage(670, 493,700, 65);
+			String place1 = "D:\\Output file\\place.jpg";
+			ImageIO.write(place, "jpg", new File(place1));
+			String place2 = tesseract.doOCR(new File(place1));
+			server.info("place :" + place2);
+
+			ocrValues.add(0,ID);
+			ocrValues.add(1,docType);
+			ocrValues.add(2,firstnamevalue);
+			ocrValues.add(3,Lastnamev);
+			ocrValues.add(4,DOB2);
+			ocrValues.add(5,place2);
+
+			/*results.put("IDNumber",ID);
+			results.put("docType",docType);
+			results.put("firstName",firstnamevalue);
+			results.put("lastName",Lastnamev);
+			results.put("DOB",DOB2);
+			results.put("place",place2);*/
 	}
+
+	public void SetDPI() throws IOException {
+
+		String inputFilePath ="D:\\Output file\\"+fileNameinput+ ".jpg";
+		// String inputFilePath = Paths.get(server.getCurrentDir(), fileNameinput).toString();
+		BufferedImage image = ImageIO.read(new File(inputFilePath));
+		ImageWriter writer = ImageIO.getImageWritersByFormatName("jpeg").next();
+		ImageWriteParam param = writer.getDefaultWriteParam();
+		param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+		param.setCompressionQuality(0.95f);
+		IIOMetadata metadata = writer.getDefaultImageMetadata(ImageTypeSpecifier.createFromRenderedImage(image), param);
+		Element tree = (Element) metadata.getAsTree("javax_imageio_jpeg_image_1.0");
+		Element jfif = (Element) tree.getElementsByTagName("app0JFIF").item(0);
+		jfif.setAttribute("Xdensity", Integer.toString(300));
+		jfif.setAttribute("Ydensity", Integer.toString(300));
+		jfif.setAttribute("resUnits", "1"); // In pixels-per-inch units
+		metadata.mergeTree("javax_imageio_jpeg_image_1.0", tree);
+		String filename = "D:\\Output file\\DPI.jpg";
+
+		try (FileImageOutputStream output = new FileImageOutputStream(new File(filename))) {
+			writer.setOutput(output);
+			IIOImage iioImage = new IIOImage(image, null, metadata);
+			writer.write(metadata, iioImage, param);
+			writer.dispose();
+		}
+	}
+
+	//preprocessing over
 	public void recognizeText() throws Exception{
 
 
@@ -345,6 +472,8 @@ public class ImageProcessingBot implements IRobot {
 
 			// Displays the result of the web API in the execution log for easy debugging
 			server.info("Response body: " + new String(response.getBodyBytes()));
+			String directory= "D:\\Output file\\";
+			FileUtils.cleanDirectory((new File(directory)));
 
 			return  new String[0] ;
 		}
