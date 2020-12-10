@@ -16,6 +16,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Browser robot template. 
@@ -125,6 +127,51 @@ public class RobotBrowserTemplate implements IRobot {
 
 		}
 		//Closing the document
+		document.close();
+	}
+
+	public void readPDFJAcinth() throws Exception{
+		//Loading an existing document
+		File file = new File("D://MK Dossier.pdf");
+		PDDocument document = PDDocument.load(file);
+		//Instantiate PDFTextStripper class
+		PDFTextStripper pdfStripper = new PDFTextStripper();
+		String text = pdfStripper.getText(document);
+		//server.info("trim"+text.trim());
+		String test =text.replaceAll("\\s","@");
+		//test.replace("&","");
+		//server.info("after replace"+test);
+		String[] list= test.split("@{137}\\bTOTAL\\b");
+		for (String a : list) {
+
+			Pattern pattern =Pattern.compile("^@{12,15}[0-9]");
+			Matcher matcher = pattern.matcher(a);
+			boolean matchFound = matcher.find();
+			//server.info(matcher.start());
+			if(matchFound) {
+				String substring="";
+				//server.info(a);
+				Pattern abc = Pattern.compile("[0-9]");
+				Matcher def = abc.matcher(a);
+				while(def.find()) {
+					 substring=a.substring(def.start());
+					 break;
+				}
+				//server.info(a);
+				int  b = substring.indexOf("@");
+				//server.info(b);
+				String c= substring.substring(0,b);
+				server.info("Values  :"+c);
+			}
+
+		}
+
+		/*String[] list=test.split("[0-9][6]TOTAL");
+		for (String a : list) {
+			server.info("rockstar");
+			server.info(a);
+		}*/
+
 		document.close();
 	}
 
